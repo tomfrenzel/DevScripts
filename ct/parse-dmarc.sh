@@ -32,14 +32,25 @@ function update_script() {
   fi
 
   if check_for_gh_release "parse-dmarc" "dmarcguardhq/parse-dmarc"; then
+    local has_mcp_service=false
+    if systemctl cat parse-dmarc-mcp.service >/dev/null 2>&1; then
+      has_mcp_service=true
+    fi
+
     msg_info "Stopping Services"
     systemctl stop parse-dmarc
+    if [[ "${has_mcp_service}" == true ]]; then
+      systemctl stop parse-dmarc-mcp
+    fi
     msg_ok "Stopped Services"
 
     fetch_and_deploy_gh_release "parse-dmarc" "dmarcguardhq/parse-dmarc" "prebuild" "latest" "/opt/parse-dmarc" "parse-dmarc_linux_amd64.tar.gz"
 
     msg_info "Starting Services"
     systemctl start parse-dmarc
+    if [[ "${has_mcp_service}" == true ]]; then
+      systemctl start parse-dmarc-mcp
+    fi
     msg_ok "Started Services"
 
     msg_ok "Updated successfully!"

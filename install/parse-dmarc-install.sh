@@ -40,6 +40,29 @@ EOF
 systemctl enable -q parse-dmarc
 msg_ok "Created Service"
 
+read -r -p "Would you like to add the HTTP/SSE MCP Server? <y/N> " prompt
+if [[ "${prompt,,}" =~ ^(y|yes)$ ]]; then
+  msg_info "Creating MCP Service"
+  cat <<EOF >/etc/systemd/system/parse-dmarc-mcp.service
+[Unit]
+Description=Parse-DMARC MCP Server
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/parse-dmarc
+ExecStart=/opt/parse-dmarc/parse-dmarc --mcp-http :8081 --config config.json
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+EOF
+  systemctl enable -q parse-dmarc-mcp
+  msg_ok "Created MCP Service"
+fi
+
 motd_ssh
 customize
 cleanup_lxc
